@@ -28,11 +28,13 @@
         /// </summary>
         private void InitializeComponent()
         {
+            this.components = new System.ComponentModel.Container();
             this.buttonAddTor = new System.Windows.Forms.Button();
             this.buttonTDelete = new System.Windows.Forms.Button();
             this.listBoxtT = new System.Windows.Forms.ListBox();
             this.progressBar = new System.Windows.Forms.ProgressBar();
             this.textBoxProp = new System.Windows.Forms.TextBox();
+            this.timer = new System.Windows.Forms.Timer(this.components);
             this.SuspendLayout();
             // 
             // buttonAddTor
@@ -58,6 +60,8 @@
             // 
             this.listBoxtT.FormattingEnabled = true;
             this.listBoxtT.ItemHeight = 16;
+            this.listBoxtT.Items.AddRange(new object[] {
+            "All torrents"});
             this.listBoxtT.Location = new System.Drawing.Point(190, 33);
             this.listBoxtT.Name = "listBoxtT";
             this.listBoxtT.Size = new System.Drawing.Size(529, 100);
@@ -78,6 +82,11 @@
             this.textBoxProp.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
             this.textBoxProp.Size = new System.Drawing.Size(529, 171);
             this.textBoxProp.TabIndex = 4;
+            this.textBoxProp.Text = "Nothing to load";
+            // 
+            // timer
+            // 
+            this.timer.Tick += new System.EventHandler(this.timer_Tick);
             // 
             // FormMain
             // 
@@ -91,6 +100,7 @@
             this.Controls.Add(this.buttonAddTor);
             this.Name = "FormMain";
             this.Text = "BBTorrent";
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.FormMain_FormClosing);
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -103,6 +113,7 @@
         private System.Windows.Forms.ListBox listBoxtT;
         private System.Windows.Forms.ProgressBar progressBar;
         private System.Windows.Forms.TextBox textBoxProp;
+        private System.Windows.Forms.Timer timer;
     }
 }
 

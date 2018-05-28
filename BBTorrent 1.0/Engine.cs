@@ -21,15 +21,15 @@ namespace BBTorrent_1._0
 {
     class Engine
     {
-        static string dhtNodeFile;
-        static string basePath;
-        public StringBuilder sb = new StringBuilder(1024);
-        public static string downloadsPath;
-        public static string fastResumeFile;
-        static string torrentsPath;
-        static ClientEngine engine;				// The engine used for downloading
-        static List<TorrentManager> torrents;	// The list where all the torrentManagers will be stored that the engine gives us
-        static Top10Listener listener;          // This is a subclass of TraceListener which remembers the last 20 statements sent to it
+        private string dhtNodeFile;
+        private string basePath;
+     //   public StringBuilder sb = new StringBuilder(1024);
+        public string downloadsPath;
+        public string fastResumeFile;
+        public string torrentsPath;
+        public ClientEngine engine;				// The engine used for downloading
+        public List<TorrentManager> torrents;	// The list where all the torrentManagers will be stored that the engine gives us
+        public Top10Listener listener;          // This is a subclass of TraceListener which remembers the last 20 statements sent to it
 
         public Engine(string TorrentsPath, string DownloadsPath, int Port)
         {
@@ -177,7 +177,7 @@ namespace BBTorrent_1._0
                 // Start the torrentmanager. The file will then hash (if required) and begin downloading/seeding
                 manager.Start();
             }
-
+            /*
             // While the torrents are still running, print out some stats to the screen.
             // Details for all the loaded torrent managers are shown.
             int i = 0;
@@ -232,21 +232,21 @@ namespace BBTorrent_1._0
 
   //              System.Threading.Thread.Sleep(500);
             }
-        }
+   */     }
 
-        static void manager_PeersFound(object sender, PeersAddedEventArgs e)
+        public void manager_PeersFound(object sender, PeersAddedEventArgs e)
         {
             lock (listener)
                 listener.WriteLine(string.Format("Found {0} new peers and {1} existing peers", e.NewPeers, e.ExistingPeers));//throw new Exception("The method or operation is not implemented.");
         }
 
-        private static void AppendSeperator(StringBuilder sb)
+        public void AppendSeperator(StringBuilder sb)
         {
             AppendFormat(sb, "", null);
             AppendFormat(sb, "- - - - - - - - - - - - - - - - - - - - - - - - - - - - - -", null);
             AppendFormat(sb, "", null);
         }
-        private static void AppendFormat(StringBuilder sb, string str, params object[] formatting)
+        private void AppendFormat(StringBuilder sb, string str, params object[] formatting)
         {
             if (formatting != null)
                 sb.AppendFormat(str, formatting);
@@ -255,7 +255,7 @@ namespace BBTorrent_1._0
             sb.AppendLine();
         }
 
-        private static void shutdown()
+        private void shutdown()
         {
             BEncodedDictionary fastResume = new BEncodedDictionary();
             for (int i = 0; i < torrents.Count; i++)
