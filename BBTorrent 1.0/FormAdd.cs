@@ -18,6 +18,22 @@ namespace BBTorrent_1._0
         public FormAdd()
         {
             InitializeComponent();
+            buttonAdd.DialogResult = DialogResult.OK;
+        }
+
+        public string TorrentsPath
+        {
+            get { return labelTorrent.Text; }
+        }
+
+        public string DownloadsPath
+        {
+            get { return labelFPath.Text; }
+        }
+
+        public int Port
+        {
+            get { return Convert.ToInt32(textBoxPort.Text); }
         }
 
         private void buttonAddEnable()
@@ -33,7 +49,7 @@ namespace BBTorrent_1._0
             if (openFileDialog.ShowDialog() == DialogResult.OK)
             {
                 FileInfo fi = new FileInfo(openFileDialog.FileName);
-                labelTorrent.Text = fi.DirectoryName + "/" + openFileDialog.FileName;
+                labelTorrent.Text = openFileDialog.FileName;
             }
             buttonAddEnable();
         }
@@ -49,13 +65,12 @@ namespace BBTorrent_1._0
 
         private void buttonAdd_Click(object sender, EventArgs e)
         {
-            Engine engine = new Engine(labelTorrent.Text, labelFPath.Text, Convert.ToInt32(textBoxPort.Text));
             Close();
         }
 
         private void textBoxPort_KeyPress(object sender, KeyPressEventArgs e)
         {
-            if (!Char.IsDigit(e.KeyChar) && e.KeyChar != 8)
+            if (!Char.IsDigit(e.KeyChar) && e.KeyChar != 8 )
             { e.Handled = true; }
             buttonAddEnable();
         }

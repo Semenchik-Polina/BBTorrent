@@ -23,6 +23,7 @@ namespace BBTorrent_1._0
     {
         static string dhtNodeFile;
         static string basePath;
+        public StringBuilder sb = new StringBuilder(1024);
         public static string downloadsPath;
         public static string fastResumeFile;
         static string torrentsPath;
@@ -30,13 +31,12 @@ namespace BBTorrent_1._0
         static List<TorrentManager> torrents;	// The list where all the torrentManagers will be stored that the engine gives us
         static Top10Listener listener;          // This is a subclass of TraceListener which remembers the last 20 statements sent to it
 
-        //static void Main(string[] args)
         public Engine(string TorrentsPath, string DownloadsPath, int Port)
         {
             /* Generate the paths to the folder we will save .torrent files to and where we download files to */
-            basePath = Environment.CurrentDirectory;						// This is the directory we are currently in
-            torrentsPath = Path.Combine(basePath, "Torrents");				// This is the directory we will save .torrents to
-            downloadsPath = Path.Combine(basePath, "Downloads");			// This is the directory we will save downloads to
+            basePath = Environment.CurrentDirectory;                        // This is the directory we are currently in
+            torrentsPath = TorrentsPath;				// This is the directory we will save .torrents to
+            downloadsPath = DownloadsPath;            // This is the directory we will save downloads to
             fastResumeFile = Path.Combine(torrentsPath, "fastresume.data");
             dhtNodeFile = Path.Combine(basePath, "DhtNodes");
             torrents = new List<TorrentManager>();							// This is where we will store the torrentmanagers
@@ -44,7 +44,6 @@ namespace BBTorrent_1._0
 
             // We need to cleanup correctly when the user closes the window by using ctrl-c
             // or an unhandled exception happens
-       //     Console.CancelKeyPress += delegate { shutdown(); };
             AppDomain.CurrentDomain.ProcessExit += delegate { shutdown(); };
             AppDomain.CurrentDomain.UnhandledException += delegate (object sender, UnhandledExceptionEventArgs e) { Console.WriteLine(e.ExceptionObject); shutdown(); };
             Thread.GetDomain().UnhandledException += delegate (object sender, UnhandledExceptionEventArgs e) { Console.WriteLine(e.ExceptionObject); shutdown(); };
@@ -52,16 +51,10 @@ namespace BBTorrent_1._0
             StartEngine(Port);
         }
 
-        private static void StartEngine(int port)
+        private void StartEngine(int port)
         {
            Torrent torrent = null;
-            // Ask the user what port they want to use for incoming connections
-//            Console.Write(Environment.NewLine + "Choose a listen port: ");
-//            while (!Int32.TryParse(Console.ReadLine(), out port)) { }
-
-
-
-            // Create the settings which the engine will use
+           // Create the settings which the engine will use
             // downloadsPath - this is the path where we will save all the files to
             // port - this is the port we listen for connections on
             EngineSettings engineSettings = new EngineSettings(downloadsPath, port);
@@ -91,7 +84,6 @@ namespace BBTorrent_1._0
             catch
             {
                 MessageBox.Show("No existing dht nodes could be loaded");
-                //Console.WriteLine("No existing dht nodes could be loaded");
             }
 
             DhtListener dhtListner = new DhtListener(new IPEndPoint(IPAddress.Any, port));
@@ -104,10 +96,6 @@ namespace BBTorrent_1._0
             if (!Directory.Exists(engine.Settings.SavePath))
                 Directory.CreateDirectory(engine.Settings.SavePath);
 
-            // If the torrentsPath does not exist, we want to create it
-            if (!Directory.Exists(torrentsPath))
-                Directory.CreateDirectory(torrentsPath);
-
             BEncodedDictionary fastResume;
             try
             {
@@ -119,22 +107,23 @@ namespace BBTorrent_1._0
             }
 
             // For each file in the torrents path that is a .torrent file, load it into the engine.
-            foreach (string file in Directory.GetFiles(torrentsPath))
-            {
-                if (file.EndsWith(".torrent"))
+       //     foreach (string file in Directory.GetFiles(torrentsPath))
+       //     {
+
+                if (torrentsPath.EndsWith(".torrent"))
                 {
                     try
                     {
                         // Load the .torrent from the file into a Torrent instance
                         // You can use this to do preprocessing should you need to
-                        torrent = Torrent.Load(file);
+                        torrent = Torrent.Load(torrentsPath);
                         
                        // Console.WriteLine(torrent.InfoHash.ToString());
                     }
                     catch (Exception e)
                     {
-                        MessageBox.Show("Couldn't decode {0}: "+ e.Message, file);
-                        continue;
+                        MessageBox.Show("Couldn't decode {0}: "+ e.Message, torrentsPath);
+                     //   continue;
                     }
                     // When any preprocessing has been completed, you create a TorrentManager
                     // which you then register with the engine.
@@ -147,7 +136,7 @@ namespace BBTorrent_1._0
                     torrents.Add(manager);
                     manager.PeersFound += new EventHandler<PeersAddedEventArgs>(manager_PeersFound);
                 }
-            }
+     //       }
 
             // If we loaded no torrents, just exist. The user can put files in the torrents directory and start
             // the client again
@@ -193,11 +182,10 @@ namespace BBTorrent_1._0
             // Details for all the loaded torrent managers are shown.
             int i = 0;
             bool running = true;
-            StringBuilder sb = new StringBuilder(1024);
             while (running)
             {
-                if ((i++) % 10 == 0)
-                {
+              //  if ((i++) % 10 == 0)
+              //  {
                     sb.Remove(0, sb.Length);
                     running = torrents.Exists(delegate (TorrentManager m) { return m.State != TorrentState.Stopped; });
 
@@ -224,10 +212,10 @@ namespace BBTorrent_1._0
                         //AppendFormat(sb, "Tracker Status:     {0}", tracker == null ? "<no tracker>" : tracker.State.ToString());
                         AppendFormat(sb, "Warning Message:    {0}", tracker == null ? "<no tracker>" : tracker.WarningMessage);
                         AppendFormat(sb, "Failure Message:    {0}", tracker == null ? "<no tracker>" : tracker.FailureMessage);
-                        if (manager.PieceManager != null)
+          //              if (manager.PieceManager != null)
           //                  AppendFormat(sb, "Current Requests:   {0}", manager.PieceManager.CurrentRequestCount());
 
-                        foreach (MonoTorrent.Client.PeerId p in manager.GetPeers())
+           //             foreach (MonoTorrent.Client.PeerId p in manager.GetPeers())
             //                AppendFormat(sb, "\t{2} - {1:0.00}/{3:0.00}kB/sec - {0}", p.Peer.ConnectionUri,
               //                                                                        p.Monitor.DownloadSpeed / 1024.0,
              //                                                                         p.AmRequestingPiecesCount,
@@ -238,12 +226,11 @@ namespace BBTorrent_1._0
                             foreach (TorrentFile file in manager.Torrent.Files)
                                 AppendFormat(sb, "{1:0.00}% - {0}", file.Path, file.BitField.PercentComplete);
                     }
-                //    Console.Clear();
-                    MessageBox.Show(sb.ToString());
+                //    MessageBox.Show(sb.ToString());
                   //  listener.ExportTo(Console.Out);
-                }
+               // }
 
-                System.Threading.Thread.Sleep(500);
+  //              System.Threading.Thread.Sleep(500);
             }
         }
 

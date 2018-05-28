@@ -20,22 +20,35 @@ namespace BBTorrent_1._0
 {
     public partial class FormMain : Form
     {
-        private FormAdd formAdd;
+        public string torrentsPath;
+        public string dowmloadsPath;
+        public int port;
 
         public FormMain()
         {
             InitializeComponent();
-            formAdd = new FormAdd();
         }
 
         private void buttonAdd_Click(object sender, EventArgs e)
         {
-            formAdd.Show();
+            using (FormAdd formAdd = new FormAdd())
+            {
+                if (formAdd.ShowDialog() == DialogResult.OK)
+                {
+                    torrentsPath = formAdd.TorrentsPath;
+                    dowmloadsPath = formAdd.DownloadsPath;
+                    port = formAdd.Port;
+                }
+            }
+            if (torrentsPath != "")
+            {
+                Engine engine = new Engine(torrentsPath, dowmloadsPath, port);
+            }         
         }
 
         public static void Download(string torrentFilePath, string downloadFolderPath)
         {
-
+            
         }
     }
 }
