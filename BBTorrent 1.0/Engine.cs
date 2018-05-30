@@ -12,35 +12,57 @@ using System.Threading;
 using MonoTorrent.BEncoding;
 using MonoTorrent.Client.Encryption;
 using MonoTorrent.Client.Tracker;
-//using MonoTorrent.Client.PeerConnections;
 using MonoTorrent.Dht;
-
-//using MonoTorrent.Dht.Listeners;
 
 namespace BBTorrent_1._0
 {
+
+
     class Engine
     {
         private string dhtNodeFile;
-        private string basePath;
-     //   public StringBuilder sb = new StringBuilder(1024);
+     //   private string basePath;
         public string downloadsPath;
         public string fastResumeFile;
         public string torrentsPath;
+  //      private string basicTorrentsPath;
+  //      private string basicDownloadsPath;
         public ClientEngine engine;				// The engine used for downloading
         public List<TorrentManager> torrents;	// The list where all the torrentManagers will be stored that the engine gives us
         public Top10Listener listener;          // This is a subclass of TraceListener which remembers the last 20 statements sent to it
 
+        public string BasicTorrentsPath
+        {
+            get { return Path.Combine(Environment.CurrentDirectory, "Torrents");}
+        }
+
+        public string BasicDownloadsPath
+        {
+            get { return Path.Combine(Environment.CurrentDirectory, "Downloads"); }
+        }
+
         public Engine(string TorrentsPath, string DownloadsPath, int Port)
         {
-            /* Generate the paths to the folder we will save .torrent files to and where we download files to */
-            basePath = Environment.CurrentDirectory;                        // This is the directory we are currently in
             torrentsPath = TorrentsPath;				// This is the directory we will save .torrents to
             downloadsPath = DownloadsPath;            // This is the directory we will save downloads to
             fastResumeFile = Path.Combine(torrentsPath, "fastresume.data");
-            dhtNodeFile = Path.Combine(basePath, "DhtNodes");
+            dhtNodeFile = Path.Combine(Environment.CurrentDirectory, "DhtNodes");
             torrents = new List<TorrentManager>();							// This is where we will store the torrentmanagers
             listener = new Top10Listener(10);
+
+            try
+            {
+                if (BasicTorrentsPath != torrentsPath)
+                {
+                    string fName = torrentsPath.Substring(torrentsPath.LastIndexOf((char)92) + 1, torrentsPath.Length - torrentsPath.LastIndexOf((char)92) - 1);
+                    File.Copy(torrentsPath, Path.Combine(BasicTorrentsPath, fName), true);
+                }
+            }
+            catch
+            {
+                MessageBox.Show("Catch");
+            }
+            
 
             // We need to cleanup correctly when the user closes the window by using ctrl-c
             // or an unhandled exception happens
@@ -53,8 +75,8 @@ namespace BBTorrent_1._0
 
         private void StartEngine(int port)
         {
-           Torrent torrent = null;
-           // Create the settings which the engine will use
+            Torrent torrent = null;
+            // Create the settings which the engine will use
             // downloadsPath - this is the path where we will save all the files to
             // port - this is the port we listen for connections on
             EngineSettings engineSettings = new EngineSettings(downloadsPath, port);
@@ -67,10 +89,9 @@ namespace BBTorrent_1._0
 
 
             // Create the default settings which a torrent will have.
-            // 4 Upload slots - a good ratio is one slot per 5kB of upload speed
-            // 50 open connections - should never really need to be changed
-            // Unlimited download speed - valid range from 0 -> int.Max
-            // Unlimited upload speed - valid range from 0 -> int.Max
+            // 4 Upload slots 
+            // 50 open connections 
+            // Unlimited download, upload speed 
             TorrentSettings torrentDefaults = new TorrentSettings(4, 150, 0, 0);
 
             // Create an instance of the engine.
@@ -92,6 +113,10 @@ namespace BBTorrent_1._0
             dhtListner.Start();
             engine.DhtEngine.Start(nodes);
 
+            // If the torrentsPath does not exist, we want to create it
+            if (!Directory.Exists(BasicTorrentsPath))
+                Directory.CreateDirectory(BasicTorrentsPath);
+
             // If the SavePath does not exist, we want to create it.
             if (!Directory.Exists(engine.Settings.SavePath))
                 Directory.CreateDirectory(engine.Settings.SavePath);
@@ -107,36 +132,36 @@ namespace BBTorrent_1._0
             }
 
             // For each file in the torrents path that is a .torrent file, load it into the engine.
-       //     foreach (string file in Directory.GetFiles(torrentsPath))
-       //     {
+          foreach (string file in Directory.GetFiles(BasicTorrentsPath))
+          {
 
-                if (torrentsPath.EndsWith(".torrent"))
+            if (file.EndsWith(".torrent"))
+            {
+                try
                 {
-                    try
-                    {
-                        // Load the .torrent from the file into a Torrent instance
-                        // You can use this to do preprocessing should you need to
-                        torrent = Torrent.Load(torrentsPath);
-                        
-                       // Console.WriteLine(torrent.InfoHash.ToString());
-                    }
-                    catch (Exception e)
-                    {
-                        MessageBox.Show("Couldn't decode {0}: "+ e.Message, torrentsPath);
-                     //   continue;
-                    }
-                    // When any preprocessing has been completed, you create a TorrentManager
-                    // which you then register with the engine.
-                    TorrentManager manager = new TorrentManager(torrent, downloadsPath, torrentDefaults);
-                    if (fastResume.ContainsKey(torrent.InfoHash.ToHex()))
-                        manager.LoadFastResume(new FastResume((BEncodedDictionary)fastResume[torrent.InfoHash.ToHex()]));
-                    engine.Register(manager);
+                    // Load the .torrent from the file into a Torrent instance
+                    // You can use this to do preprocessing should you need to
+                    torrent = Torrent.Load(file);
 
-                    // Store the torrent manager in our list so we can access it later
-                    torrents.Add(manager);
-                    manager.PeersFound += new EventHandler<PeersAddedEventArgs>(manager_PeersFound);
+                    // Console.WriteLine(torrent.InfoHash.ToString());
                 }
-     //       }
+                catch (Exception e)
+                {
+                    MessageBox.Show("Couldn't decode {0}: " + e.Message, file);
+                    //   continue;
+                }
+                // When any preprocessing has been completed, you create a TorrentManager
+                // which you then register with the engine.
+                TorrentManager manager = new TorrentManager(torrent, downloadsPath, torrentDefaults);
+                if (fastResume.ContainsKey(torrent.InfoHash.ToHex()))
+                    manager.LoadFastResume(new FastResume((BEncodedDictionary)fastResume[torrent.InfoHash.ToHex()]));
+                engine.Register(manager);
+
+                // Store the torrent manager in our list so we can access it later
+                torrents.Add(manager);
+                manager.PeersFound += new EventHandler<PeersAddedEventArgs>(manager_PeersFound);
+            }
+           }
 
             // If we loaded no torrents, just exist. The user can put files in the torrents directory and start
             // the client again
@@ -177,62 +202,7 @@ namespace BBTorrent_1._0
                 // Start the torrentmanager. The file will then hash (if required) and begin downloading/seeding
                 manager.Start();
             }
-            /*
-            // While the torrents are still running, print out some stats to the screen.
-            // Details for all the loaded torrent managers are shown.
-            int i = 0;
-            bool running = true;
-            while (running)
-            {
-              //  if ((i++) % 10 == 0)
-              //  {
-                    sb.Remove(0, sb.Length);
-                    running = torrents.Exists(delegate (TorrentManager m) { return m.State != TorrentState.Stopped; });
-
-                    AppendFormat(sb, "Total Download Rate: {0:0.00}kB/sec", engine.TotalDownloadSpeed / 1024.0);
-                    AppendFormat(sb, "Total Upload Rate:   {0:0.00}kB/sec", engine.TotalUploadSpeed / 1024.0);
-                    AppendFormat(sb, "Disk Read Rate:      {0:0.00} kB/s", engine.DiskManager.ReadRate / 1024.0);
-                    AppendFormat(sb, "Disk Write Rate:     {0:0.00} kB/s", engine.DiskManager.WriteRate / 1024.0);
-                    AppendFormat(sb, "Total Read:         {0:0.00} kB", engine.DiskManager.TotalRead / 1024.0);
-                    AppendFormat(sb, "Total Written:      {0:0.00} kB", engine.DiskManager.TotalWritten / 1024.0);
-                    AppendFormat(sb, "Open Connections:    {0}", engine.ConnectionManager.OpenConnections);
-
-                    foreach (TorrentManager manager in torrents)
-                    {
-                        
-                        AppendSeperator(sb);
-                        AppendFormat(sb, "State:           {0}", manager.State);
-                        AppendFormat(sb, "Name:            {0}", manager.Torrent == null ? "MetaDataMode" : manager.Torrent.Name);
-                        AppendFormat(sb, "Progress:           {0:0.00}", manager.Progress);
-                        AppendFormat(sb, "Download Speed:     {0:0.00} kB/s", manager.Monitor.DownloadSpeed / 1024.0);
-                        AppendFormat(sb, "Upload Speed:       {0:0.00} kB/s", manager.Monitor.UploadSpeed / 1024.0);
-                        AppendFormat(sb, "Total Downloaded:   {0:0.00} MB", manager.Monitor.DataBytesDownloaded / (1024.0 * 1024.0));
-                        AppendFormat(sb, "Total Uploaded:     {0:0.00} MB", manager.Monitor.DataBytesUploaded / (1024.0 * 1024.0));
-                        MonoTorrent.Client.Tracker.Tracker tracker = manager.TrackerManager.CurrentTracker;
-                        //AppendFormat(sb, "Tracker Status:     {0}", tracker == null ? "<no tracker>" : tracker.State.ToString());
-                        AppendFormat(sb, "Warning Message:    {0}", tracker == null ? "<no tracker>" : tracker.WarningMessage);
-                        AppendFormat(sb, "Failure Message:    {0}", tracker == null ? "<no tracker>" : tracker.FailureMessage);
-          //              if (manager.PieceManager != null)
-          //                  AppendFormat(sb, "Current Requests:   {0}", manager.PieceManager.CurrentRequestCount());
-
-           //             foreach (MonoTorrent.Client.PeerId p in manager.GetPeers())
-            //                AppendFormat(sb, "\t{2} - {1:0.00}/{3:0.00}kB/sec - {0}", p.Peer.ConnectionUri,
-              //                                                                        p.Monitor.DownloadSpeed / 1024.0,
-             //                                                                         p.AmRequestingPiecesCount,
-             //                                                                         p.Monitor.UploadSpeed / 1024.0);
-
-                        AppendFormat(sb, "", null);
-                        if (manager.Torrent != null)
-                            foreach (TorrentFile file in manager.Torrent.Files)
-                                AppendFormat(sb, "{1:0.00}% - {0}", file.Path, file.BitField.PercentComplete);
-                    }
-                //    MessageBox.Show(sb.ToString());
-                  //  listener.ExportTo(Console.Out);
-               // }
-
-  //              System.Threading.Thread.Sleep(500);
-            }
-   */     }
+        }
 
         public void manager_PeersFound(object sender, PeersAddedEventArgs e)
         {
